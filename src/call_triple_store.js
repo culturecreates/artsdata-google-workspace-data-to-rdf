@@ -20,7 +20,7 @@ const callTripleStore = (sparql, operation) => {
   }
 
   const response = UrlFetchApp.fetch(url, options);
-  // Logger.log(response.getContentText());
+  Logger.log(`Calling triple store: ${response.getContentText()} ${response.getResponseCode()}`);
   return `${response.getContentText()} ${response.getResponseCode()}`;
 };
 

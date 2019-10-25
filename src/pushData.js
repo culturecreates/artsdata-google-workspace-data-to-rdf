@@ -16,16 +16,17 @@ const getPrefixes = () => {
 
 const updateGraph = graphName => {
   const turtleData = getTurtleData();
-  const sparql = `${getPrefixes()}INSERT DATA  {  GRAPH ${graphName} { ${turtleData} }}`;
-  callTripleStore(sparql);
+  const sparql = `${getPrefixes()} INSERT DATA  {  GRAPH ${graphName} { ${turtleData} }}`;
+  return callTripleStore(sparql);
 };
 
 const dropGraph = graphName => {
   const sparql = `DROP GRAPH ${graphName}`;
-  callTripleStore(sparql);
+  return callTripleStore(sparql);
 };
 
-const pushData = data => {
+const pushData = (data = { graph: 'http://kg.artsdata.ca/google_sheet_test' }) => {
+  Logger.log(`pushData received: ${data.graph} `);
   const graphName = `<${data.graph}>`;
   dropGraph(graphName);
   return updateGraph(graphName);

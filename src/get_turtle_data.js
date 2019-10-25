@@ -18,33 +18,36 @@ const getPropertyMapping = () => {
 const lookupProperty = (propertyMapping, prop) => {
   for (let row = 0; row < propertyMapping.length; row += 1) {
     if (propertyMapping[row][0] === prop) {
-      return propertyMapping[row][1];
+      const propertyMap = {};
+      for (let p = 0; p < propertyMapping[0].length; p += 1) {
+        propertyMap[propertyMapping[0][p]] = propertyMapping[row][p];
+      }
+      return propertyMap; // mapped property name in column 2
     }
   }
   return undefined;
 };
 
-const formatObject = (predicate, objectString, splitDelimiter) => {
-  let formattedObject = '';
-  if (predicate === 'schema:description') {
-    // escape quotes
-    formattedObject = `"${objectString.replace(/"/g, '\\"')}"`;
+const formatObject = (predicate, objectString, objTransform, objSplit) => {
+  let formattedObject = objectString;
+
+  if (objSplit) {
+    if (objSplit === 'LF') {
+      formattedObject = `"${formattedObject.split('\n').join('" , "')}"`;
+    } else {
+      formattedObject = `"${formattedObject.split(objSplit).join('" , "')}"`;
+    }
+  } else if (objTransform) {
+    formattedObject = objTransform.replace(/{{value}}/g, formattedObject);
+  } else if (predicate === 'schema:description') {
+    formattedObject = `"${formattedObject.replace(/"/g, '\\"')}"`; // escape quotes
   } else if (predicate === 'ado:promotionalDescription') {
     // uriencode
-    formattedObject = `"${encodeURI(objectString)}"`;
-  } else if (splitDelimiter) {
-    // split string using semicolon
-    // ///// const itemList = objectString.split(splitDelimiter);
-    // itemList.forEach(function(item, i) {
-    //   // formattedObject += expandSingleRole(item, predicate) ;
-    //   if (i < itemList.length - 1) {
-    //     formattedObject += ' , ';
-    //   }
-    // });
+    formattedObject = `"${encodeURI(formattedObject)}"`;
   } else if (typeof objectString === 'string' || objectString instanceof String) {
-    formattedObject = `"${objectString.replace(/"/g, '\\"')}"`;
+    formattedObject = `"${formattedObject.replace(/"/g, '\\"')}"`;
   } else {
-    formattedObject = `"${objectString.toString()}"`;
+    formattedObject = `"${formattedObject.toString()}"`; // Convert number to string
   }
   // Logger.log(objectString);
 
@@ -70,23 +73,32 @@ const getTurtleData = () => {
 
   const data = sheet.getRange(firstRow, firstColumn, numberRows, numberColumns).getValues();
   let outputString = '';
-  let dataSubject;
-  let dataPredicate;
-  let dataObject;
+  let rdfSubject;
+  let rdfPredicate;
+  let rdfObject;
 
   for (let row = 1; row < numberRows; row += 1) {
     // if (mappedProperty(data[row][0]) == "") { continue; }   //NEW!!
-    dataSubject = `adr:001000-${data[row][idColumn]}`; // NEW!!
+    const subjectTransform = lookupProperty(propertyMapping, 'ID').Transform;
+    rdfSubject = subjectTransform.replace('{{value}}', data[row][idColumn]);
 
-    for (let column = 1; column < numberColumns; column += 1) {
-      const schemaProp = lookupProperty(propertyMapping, data[propertyRow][column]);
-      if (data[row][column] && schemaProp && column !== idColumn) {
-        dataPredicate = schemaProp;
-        dataObject = data[row][column];
-        outputString += `${dataSubject} ${dataPredicate} ${formatObject(
-          dataPredicate,
-          dataObject
-        )} .   `;
+    for (let column = 0; column < numberColumns; column += 1) {
+      const propertyMap = lookupProperty(propertyMapping, data[propertyRow][column]);
+      if (propertyMap) {
+        const rdfProp = propertyMap.Property;
+        // Logger.log(`rdfProp: ${rdfProp} propertyMap.Transform: ${propertyMap.Transform}`);
+        const objTransform = propertyMap.Transform;
+        const objSplit = propertyMap.Split;
+        if (data[row][column] && rdfProp && column !== idColumn) {
+          rdfPredicate = rdfProp;
+          rdfObject = data[row][column];
+          outputString += `${rdfSubject} ${rdfPredicate} ${formatObject(
+            rdfPredicate,
+            rdfObject,
+            objTransform,
+            objSplit
+          )} .   `;
+        }
       }
     }
   }
