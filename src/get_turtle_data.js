@@ -15,19 +15,6 @@ const getPropertyMapping = () => {
   return sheet.getDataRange().getValues();
 };
 
-const lookupProperty = (propertyMapping, prop) => {
-  for (let row = 0; row < propertyMapping.length; row += 1) {
-    if (propertyMapping[row][0] === prop) {
-      const propertyMap = {};
-      for (let p = 0; p < propertyMapping[0].length; p += 1) {
-        propertyMap[propertyMapping[0][p]] = propertyMapping[row][p];
-      }
-      return propertyMap; // mapped property name in column 2
-    }
-  }
-  return undefined;
-};
-
 const formatObject = (predicate, objectString, objTransform, objSplit) => {
   let formattedObject = objectString;
 
@@ -37,7 +24,8 @@ const formatObject = (predicate, objectString, objTransform, objSplit) => {
     } else {
       formattedObject = `"${formattedObject.split(objSplit).join('" , "')}"`;
     }
-  } else if (objTransform) {
+  }
+  if (objTransform) {
     formattedObject = objTransform.replace(/{{value}}/g, formattedObject);
   } else if (predicate === 'schema:description') {
     formattedObject = `"${formattedObject.replace(/"/g, '\\"')}"`; // escape quotes
@@ -54,50 +42,69 @@ const formatObject = (predicate, objectString, objTransform, objSplit) => {
   return formattedObject;
 };
 
-const getTurtleData = () => {
+const getDataSheet = () => {
   const sheet = SpreadsheetApp.getActiveSheet();
-  const firstRow = 1;
-  const firstColumn = 1;
+  return sheet.getDataRange().getValues();
+};
 
-  const idColumn = 1; // getColumnNumFor("ID");   //NEW!!!! start from 0
-  const propertyRow = 0;
+const lookupData = (data, row, fieldName) => {
+  // 1. get column number of fieldName
+  const col = data[0].indexOf(fieldName);
 
-  const lastRow = sheet.getLastRow();
-  const lastColumn = sheet.getLastColumn();
+  // 2. get data
+  return data[row][col];
+};
 
-  const numberRows = lastRow - firstRow + 1;
-  const numberColumns = lastColumn - firstColumn + 1;
+const getTurtleData = () => {
+  const data = getDataSheet();
 
   const propertyMapping = getPropertyMapping();
-  // var propsToSplitOnSemicolon = getPropsToSplitOnSemicolon();
 
-  const data = sheet.getRange(firstRow, firstColumn, numberRows, numberColumns).getValues();
   let outputString = '';
-  let rdfSubject;
-  let rdfPredicate;
-  let rdfObject;
 
-  for (let row = 1; row < numberRows; row += 1) {
-    // if (mappedProperty(data[row][0]) == "") { continue; }   //NEW!!
-    const subjectTransform = lookupProperty(propertyMapping, 'ID').Transform;
-    rdfSubject = subjectTransform.replace('{{value}}', data[row][idColumn]);
+  // Mapping table: Field, Property, Transform, Split
 
-    for (let column = 0; column < numberColumns; column += 1) {
-      const propertyMap = lookupProperty(propertyMapping, data[propertyRow][column]);
-      if (propertyMap) {
-        const rdfProp = propertyMap.Property;
-        // Logger.log(`rdfProp: ${rdfProp} propertyMap.Transform: ${propertyMap.Transform}`);
-        const objTransform = propertyMap.Transform;
-        const objSplit = propertyMap.Split;
-        if (data[row][column] && rdfProp && column !== idColumn) {
-          rdfPredicate = rdfProp;
-          rdfObject = data[row][column];
-          outputString += `${rdfSubject} ${rdfPredicate} ${formatObject(
-            rdfPredicate,
-            rdfObject,
-            objTransform,
-            objSplit
-          )} .   `;
+  const fieldCol = 2;
+  const propertyCol = 0;
+  const templateCol = 1;
+  const splitCol = 3;
+
+  const idColumn = lookupData(data, 0, propertyMapping[1][fieldCol]); // getColumnNumFor("ID");   //NEW!!!! start from 0
+
+  for (let row = 1; row < data.length; row += 1) {
+    // go through each row of the spreadsheet
+
+    const subjectTransform = propertyMapping[1][templateCol]; // Subject must be first row
+    const rdfSubject = subjectTransform.replace('{{value}}', lookupData(data, row, idColumn)); // TODO: get rid of idColumn
+
+    for (let mapRow = 2; mapRow < propertyMapping.length; mapRow += 1) {
+      // go through each row of mapping table
+      const fieldName = propertyMapping[mapRow][fieldCol];
+      const rdfPredicate = propertyMapping[mapRow][propertyCol];
+      const objTemplate = propertyMapping[mapRow][templateCol];
+      const objSplit = propertyMapping[mapRow][splitCol];
+
+      if (rdfPredicate !== '') {
+        if (fieldName === '') {
+          outputString += ` ${rdfSubject} ${rdfPredicate} ${objTemplate} `;
+        } else {
+          const rawObject = lookupData(data, row, fieldName);
+          if (rawObject !== '') {
+            const rdfObject = formatObject(rdfPredicate, rawObject, objTemplate, objSplit);
+            outputString += ` ${rdfSubject} ${rdfPredicate} ${rdfObject} `;
+          } else {
+            // do nothing - avoid entering statements with an empty rdfObject
+          }
+        }
+      } else if (fieldName === '') {
+        outputString += `  ${objTemplate} `;
+      } else {
+        const rawObject = lookupData(data, row, fieldName);
+        if (rawObject !== '') {
+          const rdfObject = formatObject(rdfPredicate, rawObject, objTemplate, objSplit);
+          outputString += `  ${rdfObject} `;
+        } else {
+          // do nothing - avoid entering statements with an empty rdfObject
         }
       }
     }
