@@ -37,9 +37,9 @@ const formatObject = (predicate, objectString, objTransform, objSplit) => {
   } else {
     formattedObject = `"${formattedObject.toString()}"`; // Convert number to string
   }
-  
+
   // remove all \n otherwise the SPARQL query will fail
-  formattedObject = formattedObject.replace(/(\r\n|\n|\r)/gm,"")
+  formattedObject = formattedObject.replace(/(\r\n|\n|\r)/gm, '');
   return formattedObject;
 };
 
@@ -110,7 +110,7 @@ const getTurtleData = () => {
       }
     }
   }
- // Logger.log(outputString);
+  // Logger.log(outputString);
   return outputString;
 };
 
