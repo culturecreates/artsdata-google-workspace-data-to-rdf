@@ -28,6 +28,12 @@
                     html: text
                 })
                 $("button").removeAttr("disabled");
+            }).withFailureHandler(function (text) {
+                M.toast({
+                    html: text,
+                    displayLength: 8000
+                })
+                $("button").removeAttr("disabled");
             }).pushData(data);
 
         }
