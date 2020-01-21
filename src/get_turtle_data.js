@@ -1,8 +1,4 @@
-const getCurrentTabName = () => {
-  return SpreadsheetApp.getActiveSpreadsheet()
-    .getActiveSheet()
-    .getName();
-};
+import getCurrentTabName from './get_current_tab_name';
 
 const getMappingTabName = () => {
   // Construct Tab name from Current Tab name
@@ -24,7 +20,10 @@ const formatObject = (predicate, objectString, objTransform, objSplit) => {
     } else {
       formattedObject = `"${formattedObject.split(objSplit).join('" , "')}"`;
     }
+  } else if (typeof objectString === 'string' || objectString instanceof String) {
+    formattedObject = `${formattedObject.replace(/"/g, '\\"')}`; // convert to string and escape quotes
   }
+
   if (objTransform) {
     formattedObject = objTransform.replace(/{{value}}/g, formattedObject);
   } else if (predicate === 'schema:description') {
@@ -33,7 +32,7 @@ const formatObject = (predicate, objectString, objTransform, objSplit) => {
     // uriencode
     formattedObject = `"${encodeURI(formattedObject)}"`;
   } else if (typeof objectString === 'string' || objectString instanceof String) {
-    formattedObject = `"${formattedObject.replace(/"/g, '\\"')}"`;
+    formattedObject = `"${formattedObject.replace(/"/g, '\\"')}"`; // escape quotes
   } else {
     formattedObject = `"${formattedObject.toString()}"`; // Convert number to string
   }

@@ -19,18 +19,18 @@
             e.preventDefault();
 
             var data = {
-                graph: $("#graph").val()
+                graphBase: $("#graphBase").val()
             };
 
             $("button").attr("disabled", "disabled");
             google.script.run.withSuccessHandler(function (text) {
                 M.toast({
-                    html: text
+                    html: "Successful. " + text
                 })
                 $("button").removeAttr("disabled");
             }).withFailureHandler(function (text) {
                 M.toast({
-                    html: text,
+                    html: "Failed. " + text,
                     displayLength: 8000
                 })
                 $("button").removeAttr("disabled");
@@ -51,8 +51,8 @@
         <form onsubmit="pushData(event)">
             <div class="row">
                 <div class="input-field col s12">
-                    <input type="text" value="<?= graph_name ?>" id="graph">
-                    <label for="graph">Graph Name</label>
+                    <input type="text" value="<?= graph_name ?>" id="graphBase">
+                    <label for="graph">Graph Base URL</label>
                 </div>
             </div>
             <div class="row">

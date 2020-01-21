@@ -1,5 +1,6 @@
 import callTripleStore from './call_triple_store';
 import getTurtleData from './get_turtle_data';
+import getCurrentTabName from './get_current_tab_name';
 
 const getPrefixes = () => {
   // example output "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -25,9 +26,9 @@ const dropGraph = graphName => {
   return callTripleStore(sparql);
 };
 
-const pushData = (data = { graph: 'http://kg.artsdata.ca/google_sheet_test' }) => {
-  Logger.log(`pushData received: ${data.graph} `);
-  const graphName = `<${data.graph}>`;
+const pushData = (data = { graphBase: 'http://kg.artsdata.ca' }) => {
+  Logger.log(`pushData received: ${data.graphBase} `);
+  const graphName = `<${data.graphBase}/${getCurrentTabName()}>`;
   dropGraph(graphName);
   return updateGraph(graphName);
 };
