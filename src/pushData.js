@@ -26,11 +26,26 @@ const dropGraph = graphName => {
   return callTripleStore(sparql);
 };
 
+const transformGraph = graphName => {
+  const transforms = getTransformSparql(graphName);
+  let transformResult = [];
+  for (let x = 1; x < transforms.length; x += 1) {
+    Logger.log(`transform ${x}: ${transforms[x]} `);
+    const sparql = `${getPrefixes()} ${transforms[x]}`;
+    transformResults << callTripleStore(sparql);
+    Logger.log(`transform ${x} result: ${transformResults[x]} `);
+  }
+  return transformResults;
+};
+
+
 const pushData = (data = { graphBase: 'http://kg.artsdata.ca' }) => {
   Logger.log(`pushData received: ${data.graphBase} `);
   const graphName = `<${data.graphBase}/${getCurrentTabName()}>`;
   dropGraph(graphName);
-  return updateGraph(graphName);
+  updateResult = updateGraph(graphName);
+  postProcessResult = transformGraph(graphName);
+  return updateResult + transformResult
 };
 
 export default pushData;
