@@ -1,6 +1,7 @@
 import callTripleStore from './call_triple_store';
 import getTurtleData from './get_turtle_data';
 import getCurrentTabName from './get_current_tab_name';
+import getTransformSparql from './get_transform_sparql';
 
 const getPrefixes = () => {
   // example output "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -28,24 +29,23 @@ const dropGraph = graphName => {
 
 const transformGraph = graphName => {
   const transforms = getTransformSparql(graphName);
-  let transformResult = [];
-  for (let x = 1; x < transforms.length; x += 1) {
-    Logger.log(`transform ${x}: ${transforms[x]} `);
-    const sparql = `${getPrefixes()} ${transforms[x]}`;
-    transformResults << callTripleStore(sparql);
-    Logger.log(`transform ${x} result: ${transformResults[x]} `);
+  const transformResults = [];
+  for (let x = 0; x < transforms.length; x += 1) {
+    const sparql = transforms[x];
+    transformResults.push(`Transform ${x}: ${callTripleStore(sparql)}`);
   }
   return transformResults;
 };
-
 
 const pushData = (data = { graphBase: 'http://kg.artsdata.ca' }) => {
   Logger.log(`pushData received: ${data.graphBase} `);
   const graphName = `<${data.graphBase}/${getCurrentTabName()}>`;
   dropGraph(graphName);
-  updateResult = updateGraph(graphName);
-  postProcessResult = transformGraph(graphName);
-  return updateResult + transformResult
+  const results = [];
+  results.push(`Update: ${updateGraph(graphName)}`);
+  results.push(transformGraph(graphName));
+
+  return results;
 };
 
 export default pushData;

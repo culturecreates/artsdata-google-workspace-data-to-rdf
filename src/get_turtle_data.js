@@ -1,6 +1,4 @@
-
-import getMappingTabName from './get_current_tab_name';
-
+import getMappingTabName from './get_mapping_tab_name';
 
 const getPropertyMapping = () => {
   const mappingTabName = getMappingTabName();

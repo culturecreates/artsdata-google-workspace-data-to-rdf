@@ -1,22 +1,17 @@
-import getMappingTabName from './get_current_tab_name';
+import getMappingTabName from './get_mapping_tab_name';
 
-const getSparqlCells = () => {
-    const mappingTabName = getMappingTabName();
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(mappingTabName);
-    const data = sheet.getDataRange().getValues();
-    const col = data[0].indexOf('Transform SPARQL');
-    let sparqlList = [];
-    for (let row = 1; row < data.length; row += 1) {
-        sparqlList << data[row][col]
+const getTransformSparql = graphName => {
+  const mappingTabName = getMappingTabName();
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(mappingTabName);
+  const data = sheet.getDataRange().getValues();
+  const col = data[0].indexOf('Transform SPARQL');
+  const sparqlList = [];
+  for (let row = 1; row < data.length; row += 1) {
+    if (data[row][col]) {
+      sparqlList.push(data[row][col].replace(/{{graph}}/g, graphName));
     }
-    Logger.log(`sparqlList: ${sparqlList}  `);
-    return sparqlList;
-  };
-
-const getTransformSparql = (graphName) => {
-    const sparqlCells = getSparqlList();
-    //add graph name
-
+  }
+  return sparqlList;
 };
 
 export default getTransformSparql;
